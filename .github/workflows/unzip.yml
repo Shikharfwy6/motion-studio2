@@ -1,0 +1,36 @@
+name: Unzip project
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "*.zip"
+
+permissions:
+  contents: write
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip and clean old files
+        run: |
+          if ! ls *.zip >/dev/null 2>&1; then
+            echo "No zip file found in the repo root"
+            exit 1
+          fi
+          ZIP=$(ls *.zip | head -n 1)
+          echo "Using $ZIP"
+          rm -f src/main/java/com/motionstudio/app/MainActivity.kt
+          unzip -o "$ZIP" -x ".github/*"
+          rm -f *.zip
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -m "Unzip project" || echo "nothing to commit"
+          git push
